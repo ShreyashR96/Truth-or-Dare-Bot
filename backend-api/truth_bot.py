@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from collections import deque
 from dotenv import load_dotenv
-from typing import Tuple
+from typing import tuple
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
@@ -60,6 +60,8 @@ game_logic = TruthDareGame()
 def escape_markdown_v2(text: str) -> str:
     """Helper function to escape text for Telegram MarkdownV2."""
     if not text: return ""
+    # We need to convert the input to string because numbers can be passed here
+    text = str(text)
     escape_chars = r'_*[]()~`>#+-=|{}.!'
     return ''.join(f'\\{char}' if char in escape_chars else char for char in text)
 
@@ -169,10 +171,11 @@ async def stop_game_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 name, _ = await get_player_name_and_mention(context, chat_id, int(player_id))
                 emoji = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else "•"
-                final_message += f"{emoji} {escape_markdown_v2(name)}: {score} points\n"
+                # --- FIX: Escape the score as well ---
+                final_message += f"{emoji} {escape_markdown_v2(name)}: {escape_markdown_v2(score)} points\n"
             except Exception as e:
                 logger.error(f"Could not process score for player {player_id} in stop_game: {e}")
-                final_message += f"• Player_{player_id}: {score} points \\(Could not fetch name\\)\n"
+                final_message += f"• Player_{player_id}: {escape_markdown_v2(score)} points \\(Could not fetch name\\)\n"
 
     final_message += f"\nUse `/groupstats` to see all\\-time records\\!\n{messages.get_game_end_message()}"
     try:
@@ -207,7 +210,8 @@ async def scores_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     for player_id, score in sorted_players:
         name, _ = await get_player_name_and_mention(context, chat_id, int(player_id))
-        message += f"• {escape_markdown_v2(name)}: {score} points\n"
+        # --- FIX: Escape the score as well ---
+        message += f"• {escape_markdown_v2(name)}: {escape_markdown_v2(score)} points\n"
     await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN_V2)
 
 @game_is_active(True)
@@ -241,7 +245,6 @@ async def group_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             dt = datetime.strptime(game_entry['start_time'], "%Y-%m-%d %H:%M:%S")
             date_str = dt.strftime("%b %d")
             winner = game_entry.get("winner", "N/A")
-            # --- FIX: Escape the hyphen at the start of the line ---
             message += f"  \\- *{escape_markdown_v2(game_entry['game_name'])}* on {date_str} \\(Winner: {escape_markdown_v2(winner)}\\)\n"
     await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN_V2)
 
@@ -299,7 +302,6 @@ async def join_game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.answer("You have joined the game!")
     
     player_name = user.username or user.first_name or f"Player_{user.id}"
-    # --- FIX: Send reply with MarkdownV2 ---
     await query.message.reply_text(f"✅ {escape_markdown_v2(player_name)} has joined the game\\!", parse_mode=ParseMode.MARKDOWN_V2)
 
 async def choice_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -387,7 +389,7 @@ async def completion_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     new_game_data = db.games.find_one_and_update({"_id": chat_id}, updates, return_document=True)
     new_score = new_game_data["scores"][player_id_str]
-    await query.edit_message_text(f"{completion_message}\nNew score: {new_score}")
+    await query.edit_message_text(f"{completion_message}\nNew score: {escape_markdown_v2(new_score)}")
     await select_next_player(context, chat_id)
 
 # --- Core Game Flow ---
