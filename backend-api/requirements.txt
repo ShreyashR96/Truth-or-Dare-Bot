@@ -1,14 +1,6 @@
-<<<<<<< HEAD
 fastapi
 uvicorn[standard]
 pymongo
 python-dotenv
 certifi
-=======
-fastapi
-uvicorn[standard]
-pymongo
-python-dotenv
-certifi
->>>>>>> 59a5478aa9b7d96e3d0bf03b0cb29057ee0603e1
 python-telegram-bot
