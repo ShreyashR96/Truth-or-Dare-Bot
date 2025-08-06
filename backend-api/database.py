@@ -28,9 +28,9 @@ class Database:
             raise ValueError("MONGODB_URI not found in environment variables.")
         
         try:
-            # --- FIX: Use certifi for a reliable SSL connection ---
+            # --- FIX: Use certifi and allow invalid certificates to bypass SSL handshake issues ---
             ca = certifi.where()
-            self.client = MongoClient(mongo_uri, tlsCAFile=ca, serverSelectionTimeoutMS=5000)
+            self.client = MongoClient(mongo_uri, tls=True, tlsCAFile=ca, tlsAllowInvalidCertificates=True, serverSelectionTimeoutMS=5000)
             
             # The ismaster command is cheap and does not require auth. It's a quick way to verify the connection.
             self.client.admin.command('ismaster')
