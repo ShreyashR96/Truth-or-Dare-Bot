@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from collections import deque
 from dotenv import load_dotenv
-from typing import tuple
+from typing import Tuple
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
