@@ -4,7 +4,7 @@ from pymongo.errors import ConnectionFailure
 from dotenv import load_dotenv
 from datetime import datetime
 import logging
-import certifi # <-- Import the new library
+import certifi
 
 # Load environment variables from .env file
 load_dotenv()
@@ -28,9 +28,8 @@ class Database:
             raise ValueError("MONGODB_URI not found in environment variables.")
         
         try:
-            # --- FIX: Use certifi and allow invalid certificates to bypass SSL handshake issues ---
-            ca = certifi.where()
-            self.client = MongoClient(mongo_uri, tls=True, tlsCAFile=ca, tlsAllowInvalidCertificates=True, serverSelectionTimeoutMS=5000)
+            # --- FINAL FIX: Added tlsInsecure=True to bypass SSL validation issues ---
+            self.client = MongoClient(mongo_uri, tls=True, tlsInsecure=True, serverSelectionTimeoutMS=5000)
             
             # The ismaster command is cheap and does not require auth. It's a quick way to verify the connection.
             self.client.admin.command('ismaster')
